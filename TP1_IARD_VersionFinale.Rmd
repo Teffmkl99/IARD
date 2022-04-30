@@ -1,0 +1,466 @@
+---
+title: "TP1_IARD1"
+author: "Ruffin Adja,Teffery Makondé"
+date: "15/09/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(survival)
+library(survminer)
+```
+
+
+# Question 1
+
+# a) Simulation de 100 observations de la loi exponentielle de paramètre $\theta=1$ et calcul du coefficient d'asymétrie
+
+
+Pour simuler les observations de la loi exponentielle,nous avons utilisé la méthode de l'inverse.
+
+En effet, la densité d'une variable aléatoire $X$ d'une loi expontentielle de paramètre $\theta=1$ est :
+$$ f_{X}(x) =\theta e^{-\theta x}$$
+La fonction de répartition est: $$F_{X}(x)=1-e^{-\theta x}$$ et la fonction de répartition inverse est: 
+$$F_{X}^{-1}(u)=-\frac{ln(1-u)}{\theta}$$
+Si nous appliquons cette fonction de répartition inverse aux observations de la loi uniforme entre $0$ et $1$, nous obtenons les observations de la loi exponentielle en question.
+
+Mais on sait que si $u$ appartient à $[0,1]$ alors $1-u$ appartient aussi à $[0,1]$.
+Par conséquent,nous pouvons appliquer la fonction $$ F_{X}^{-1}(u)=-\frac{ln(u)}{\theta} $$ aux observations de la loi uniforme entre $0$ et $1$ est suffisant pour simuler les observations de la loi exponentielle.
+
+
+```{r echo=FALSE, eval=TRUE}
+size <- 100   ## Taille de l'échantillon 
+lambda <- 1  ## paramètre de la loi exponentielle
+
+x<- -log(runif(size))/lambda ## Fonction de répartition inverse. runif étant
+## 0 et 1, 1- runif est aussi entre 0 et 1. On peut donc garder la fonction de 
+##répartition comme telle.
+```
+La moyenne empirique des observations de l'échantillon simulé est: $$\bar{X}=\frac{1}{100}\sum_{i=1}^{100}x_i $$
+et est égale à : `r mean(x)`.
+
+D'où l'estimateur du coefficient d'asymétrie est obtenu comme suit:
+$$\widehat\gamma=\frac{(\sum_{i=1}^{100}(x_i-\bar{X})^3)/100}{((\sum_{i=1}^{100}(x_i-\bar{X})^2)/100)^{1.5}}$$
+
+```{r x, echo=FALSE, EVAL=TRUE}
+#### Un estimateur du coefficient d'asymétrie
+##(estskewness <- (sum((x-mean(x))^3)/size)/((sum((x-mean(x))^2)/(size-1))^1.5))
+
+coefasym <- (sum((x-mean(x))^3)/size)/(sum((x-mean(x))^2)/size)^1.5
+
+```
+
+et est égal à : `r coefasym`
+
+L'histogramme construit à partir des données de l'échantillon est présenté ci-après. Le tracé bleu est la densité d'une loi exponentielle de paramètre $\theta=1$, tandis que le tracé rouge est la médiane empririque. 
+
+```{r echo=FALSE, EVAL=TRUE}
+hist(x, prob = TRUE, main="Histogramme construit à partir des observations", ylab="fréquence", xlab="observations")
+##Tracé de l'histogramme
+curve(dexp(x, rate = lambda), add = TRUE, col="blue")
+##Courbe en bleu de la densité théorique d'une loi exponentielle de ##paramètre égal à 1.
+abline(v=quantile(x, 0.5), col="red", lwd=2, lty=2) 
+##Tracé en rouge de la médiane
+```
+<li>Nous pouvons faire trois constats à la suite du graphique ci-dessus:
+<li>-L'histogramme s'adapte parfaitement à la courbe de la densité théorique de la loi exponentielle. 
+<li>-L'estimateur du coefficient d'asymétrie est proche de 2,ce qui est la valeur théorique du coefficient d'asymétrie de la loi expnentielle.
+<li>-Le coefficient d'asymétrie est positif donc la distribution empirique est décalée à gauche de la médiane et nous obtenons une queue de distribution étalée vers la droite.
+
+```{r echo=FALSE, EVAL=TRUE}
+#Graphique de Fn
+Fn <- ecdf(x)
+plot.ecdf(Fn, main="Fonctions de répartition empirique (bleu) et théorique (rouge)", col="blue", lty=1)
+curve(pexp(x, rate=lambda), col="red", lwd=2, add=TRUE)
+
+```
+
+Le tracé bleu représente la courbe de la fonction de répartition empirique de la loi exponentielle de paramètre $\theta=1$ alors que le tracé rouge est la courbe de la fonction de répartition théorique de la même loi. 
+
+On remarque que les deux courbes sont très proches et se superposent par moment.Ainsi, on confirme que la fonction de répartition empirique calculée, $F_n(x)$ est un bon estimateur de la fonction de répartition théorique $F(x)$.
+
+
+# b) Calcul de la variance de l'estimateur du coefficient d'asymétrie et d'un intervalle de confiance de niveau 95% 
+
+Par la méthode du bootstrap, nous allons simuler 50 échantillons de taille 100 d'une loi exponentielle de paramètre $\theta=1$.
+
+```{r echo=FALSE, eval=TRUE}
+########## Bootsrap
+########## Tirage de 50 échantillons de taille size
+
+m <- 50 # nombre de simulations
+size <-100   ## Taille de l'échantillon 
+lambda <- 1  ## paramètre de la loi exponentielle
+
+
+matrice <- matrix(0, nrow=1, ncol=m)
+
+## Simulation comme telle.
+matrice2<-matrix(0,nrow=100,ncol=50)
+for (i in 1:m)
+{
+  u <- -log(runif(size))/lambda
+  matrice[, i] <- c((sum((u-mean(u))^3)/size)/(sum((u-mean(u))^2)/size)^1.5) # Coeffient d'asymétrie
+              
+matrice2[,i]<-c(u) # Stockage des valeurs de u pour utilisation ultérieure
+}
+
+
+## Nous pouvons maintenant calculer la moyenne des m Coeffients d'asymétrie
+moyenne_coef<- rowMeans(matrice)
+## Nous pouvons finalement calculer la variance de l'estimateur du coeeficient d'asymétrie
+Variance_coefasym<- sum((matrice-moyenne_coef)^2)/(m-1)
+```
+
+La moyenne des coefficients d'asymétrie des 50 échantillons simulés est:  `r rowMeans(matrice)`
+et sa variance est: `r Variance_coefasym`.
+
+Si $a$ et $b$ sont les bornes d'un intervalle de confiance de niveau 95% de $$Z=\frac{\widehat\gamma-\mu}{\sigma}$$ 
+qui suit une loi normale standard alors on peut écrire que: $$P(a<Z<b)=0.95$$
+et il s'ensuit que $P(Z<a)=0.025$ et $P(Z>b)=0.975$. 
+Finalement, on a $$a=\phi^{-1}(0.025)$$ et $$b=\phi^{-1}(0.975)$$
+Et on peut tirer que $$P(a\sigma+\mu<\widehat\gamma<b\sigma+\mu)=0.95$$
+
+```{r echo=FALSE, eval=TRUE}
+lower<-rowMeans(matrice) + qnorm(0.025)*sqrt(sum((matrice-moyenne_coef)^2)/(m-1)) 
+##Borne inférieure de l'intervalle de confiance de seuil 95% 
+##de l'estimateur du coefficient d'asymétrie
+upper<-rowMeans(matrice) + qnorm(0.975)*sqrt(sum((matrice-moyenne_coef)^2)/(m-1)) 
+##Borne supérieure de l'intervalle de confiance de seuil 95% de
+##l'estimateur du coefficient d'asymétrie
+```
+
+Ainsi, on a $P($ `r lower` $<\widehat\gamma$<`r upper`$)=0.95$.
+
+L'intervalle de confiance de niveau 95% de $\widehat\gamma$ est : $[$ `r lower` $,$ `r upper`$]$
+
+# c) Calcul du coefficient d'asymétrie théorique de la loi exponentielle de paramètre $\theta=1$
+
+On sait que si $X$ est une variable aléatoire de la loi exponenentielle de moyenne $\theta=1$ et de densité 
+$$f_X(x)={\theta}e^{-{\theta}x}, x>0$$ ,
+
+Le coefficient d'asymétrie est : 
+$$\gamma=\frac{E((X-\mu)^3)}{\sigma^3}$$
+
+En développant cette expression, on obtient :
+$$\gamma=\frac{1}{\sigma^3}(E(X^3)-3\mu\sigma^2-\mu^3)$$
+Calculons chacun des éléments de cette égalité.
+$$E(X^3)=\int_0^\infty x^3e^{-x}dx$$
+qui est encore égal à $$E(X^3)={\Gamma(4)}\int_0^\infty\frac{x^{4-1}}{\Gamma(4)}e^{-x}dx$$
+D'où $$E(X^3)=6$$
+On sait aussi que $$\mu=\frac{1}{\theta}=1$$
+et $$Var(X)=\sigma^2=\frac{1}{{\theta}^2}=1$$
+On peut donc calculer le coefficient d'asymétrie: $\gamma=6-3-1=2$.
+
+On peut noter que la valeur de l'estimateur du coefficient d'asymétrie est proche de sa valeur théorique. Ici, l'écart entre les deux valeurs est de `r 100* abs((2-((sum((x-mean(x))^3)/size)/(sum((x-mean(x))^2)/size)^1.5))/2)`%
+
+# Question 2
+
+# a) Estimation de $E(min(X,u))$ de façon non paramétrique
+
+Un estimateur de $E(min(X,u))$ est $\frac{\sum_{i=1}^{100}min(x_i,u)}{100}$
+
+```{r echo=FALSE, eval=TRUE}
+
+##création d'un vecteur qui stocke les différentes valeurs de quantiles de la loi exponentielle
+ui<-c(qexp(0.25, rate=1),qexp(0.35, rate=1),qexp(0.5, rate=1),qexp(0.6, rate=1),qexp(0.75, rate=1),qexp(0.85, rate=1))
+
+##Calcul des estimateurs de E(min(X,u))
+perte_limitee <- numeric(6)
+for(i in 1:6) 
+  perte_limitee[i] <- sum(pmin(x,ui[i]))/100
+##ou encore perte_limitee[i] <- sum(x[x<=ui[i]])/100 + ui[i]*sum(x>ui[i])/100 pour la version longue
+```
+
+Les résultats sont présentées dans le tableau ci-dessous.
+
+u                     |Valeur de u           | Estimateur de la perte limitée          | 
+----------------------|--------------------- | ----------------------------------------| 
+$u=F^{-1}(0,25)$      |`r qexp(0.25, rate=1)`| `r perte_limitee[1]`                    | 
+$u=F^{-1}(0,35)$      |`r qexp(0.35, rate=1)`| `r perte_limitee[2]`                    | 
+$u=F^{-1}(0,50)$      |`r qexp(0.50, rate=1)`| `r perte_limitee[3]`                    | 
+$u=F^{-1}(0,65)$      |`r qexp(0.65, rate=1)`| `r perte_limitee[4]`                    | 
+$u=F^{-1}(0,75)$      |`r qexp(0.75, rate=1)`| `r perte_limitee[5]`                    | 
+$u=F^{-1}(0,85)$      |`r qexp(0.85, rate=1)`| `r perte_limitee[6]`                    | 
+
+
+On note que, de même que $u$ augmente avec la probabilité, l'estimateur augmente aussi avec la valeur de $u$. Ce résultat est logique.
+En effet, lorsque le déductible (ordinaire ou avec franchise)augmente, il faut que $E(min(X,u))$, la perte limitée, augmente également afin que la prime (par perte ou par paiement) diminue. 
+
+
+De façon théorique, $$E(min(X,u))=\int_0^u\theta x e^{-\theta x}dx+\int_u^\infty u \theta e^{-\theta x}dx$$
+qui est égal, après calculs à 
+$E(min(X,u))=\frac{1}{\theta}(1-e^{-\theta u})$.
+
+Comme $\theta=1$, $E(min(X,u))=1-e^{-u}$
+
+```{r echo=FALSE, eval=TRUE}
+
+##création d'un vecteur qui stocke les différentes valeurs de quantiles de la loi exponentielle
+ui<-c(qexp(0.25, rate=1),qexp(0.35, rate=1),qexp(0.5, rate=1),qexp(0.6, rate=1),qexp(0.75, rate=1),qexp(0.85, rate=1))
+
+##Calcul des valeurs théoriques de E(min(X,u)), la perte limitée
+valth <- numeric(6)
+for(i in 1:6) 
+  valth[i] <- 1-exp(-ui[i])
+
+```
+
+Le tableau ci-après récapitule le résultat des calculs.
+
+u                     |Estimat. perte limitée| Valeur théorique perte limitée          | 
+----------------------|--------------------- | ----------------------------------------| 
+$u=F^{-1}(0,25)$      |`r perte_limitee[1]`  | `r valth[1]`                            | 
+$u=F^{-1}(0,35)$      |`r perte_limitee[2]`  | `r valth[2]`                            | 
+$u=F^{-1}(0,50)$      |`r perte_limitee[3]`  | `r valth[3]`                            | 
+$u=F^{-1}(0,65)$      |`r perte_limitee[1]`  | `r valth[4]`                            | 
+$u=F^{-1}(0,75)$      |`r perte_limitee[1]`  | `r valth[5]`                            | 
+$u=F^{-1}(0,85)$      |`r perte_limitee[1]`  | `r valth[6]`                            | 
+
+
+
+A partir des valeurs de la perte limitée (estimées et théoriques), on peut calculer les valeurs estimées et théorique de la prime par par perte, comme suit:
+
+$$Estimateur(prime_u)=\frac{\sum_{i=1}^{100}x_i}{100}-Estimateur(PerteLimitée_u)$$
+et 
+$$PrimeThéorique_u=e^{-u}$$
+
+Ces valeurs sont présentées dans le tabeau ci-dessous.
+
+u                     |Estimat.prime par perte          | Valeur théorique prime par perte      | 
+----------------------|---------------------------------|---------------------------------------| 
+$u=F^{-1}(0,25)$      |`r mean(x) - perte_limitee[1]`   | `r exp(-ui[1])`                       | 
+$u=F^{-1}(0,35)$      |`r mean(x) - perte_limitee[2]`   | `r exp(-ui[2])`                       | 
+$u=F^{-1}(0,50)$      |`r mean(x) - perte_limitee[3]`   | `r exp(-ui[3])`                       | 
+$u=F^{-1}(0,65)$      |`r mean(x) - perte_limitee[4]`   | `r exp(-ui[4])`                       | 
+$u=F^{-1}(0,75)$      |`r mean(x) - perte_limitee[5]`   | `r exp(-ui[5])`                       | 
+$u=F^{-1}(0,85)$      |`r mean(x) - perte_limitee[6]`   | `r exp(-ui[6])`                       | 
+
+
+
+
+# b) Bootstrap et intervalle de confiance pour les primes loss avec déductibles ordinaires $u=F^{-1}(0,50)$ et $u=F^{-1}(0,75)$
+
+On sait que $$E(Y^L)=E(X)-E(min(X,u))$$
+Donc, $$\widehat{E(Y^L)}=\widehat{E(X)}-\widehat{E(min(X,u))}$$
+Ce qui revient à $$\widehat{E(Y^L)}=\frac{\sum_{m=1}^{50}\sum_{i=1}^{100}x_{i,m}}{50*100}-\frac{\sum_{m=1}^{50}\sum_{i=1}^{100}min(x_{i,m},u)}{50*100}$$
+
+```{r echo=FALSE, eval=TRUE}
+matrice3 <-matrix(0,nrow=2,ncol=m) #Initialisation d'une matrice3 qui va stocker les valeurs des estimateurs de la prime par perte pour chacun des 50 échantillons et pour chacun des déductibles
+# Boucle sur les colonnes de matrice2
+for(j in 1:m ){
+  for (i in 1:100){ 
+    
+      min1<-sum(pmin(matrice2[i,j],qexp(0.50,rate=1))) #Estimation de E(min(X,u)) si u=F^{-1}(0,50)
+      min2<-sum(pmin(matrice2[i,j],qexp(0.75,rate=1))) #Estimation de E(min(X,u)) si u=F^{-1}(0,75)
+ 
+ 
+  }
+   matrice3[,j]<-c(colMeans(matrice2)[j]-min1, #Estimation prime par perte si u=F^{-1}(0,50)
+                   colMeans(matrice2)[j]-min2) #Estimation prime par perte si u=F^{-1}(0,75)
+}
+
+Variance_prime_loss1<- sum((matrice3[1,]-rowMeans(matrice3)[1])^2)/(m-1) #Variance de l'estimateur de la prime par perte si u=F^{-1}(0,50)
+Variance_prime_loss2<- sum((matrice3[2,]-rowMeans(matrice3)[2])^2)/(m-1) #Variance de l'estimateur de la prime par perte si u=F^{-1}(0,75)
+```
+
+Les primes par perte et leur variance en fonction du deductible sont:
+
+u                     | Valeur de u           | Estimateur de la prime par perte|Variance Estimateur
+--------------------- | --------------------  | --------------------------------|------------------------
+$u=F^{-1}(0,50)$      | `r qexp(0.50, rate=1)`| `r rowMeans(matrice3)[1]`       |`r Variance_prime_loss1`
+$u=F^{-1}(0,75)$      | `r qexp(0.75, rate=1)`| `r rowMeans(matrice3)[2]`       |`r Variance_prime_loss2`
+
+
+De ces valeurs,on peut tirer les bornes de l'intervalles de confiance de niveau 95% de la prime par perte selon les valeurs de $u$, le déductible simple. 
+
+```{r, echo=FALSE, eval=TRUE}
+##Borne inférieure de l'intervalle de confiance de seuil 95% de la prime par perte pour u=F^{-1}(0,50)
+a1<-rowMeans(matrice3)[1] + qnorm(0.025)*sqrt(Variance_prime_loss1)
+##Borne supérieure de l'intervalle de confiance de seuil 95% de la prime par perte pour u=F^{-1}(0,50)
+b1<-rowMeans(matrice3)[1] + qnorm(0.975)*sqrt(Variance_prime_loss1)
+
+##Borne inférieure de l'intervalle de confiance de seuil 95% de la prime par perte pour u=F^{-1}(0,75)
+a2<-rowMeans(matrice3)[2] + qnorm(0.025)*sqrt(Variance_prime_loss2)
+##Borne supérieure de l'intervalle de confiance de seuil 95% de la prime par perte pour u=F^{-1}(0,75)
+b2<-rowMeans(matrice3)[2] + qnorm(0.975)*sqrt(Variance_prime_loss2)
+```
+
+Les primes par perte et leur variance en fonction du deductible sont:
+
+u               | Est. prime par perte    |IC à 95%
+----------------| ------------------------|---------------------------------|
+$u=F^{-1}(0,50)$|`r rowMeans(matrice3)[1]`|[`r a1`, `r b1`]
+$u=F^{-1}(0,75)$|`r rowMeans(matrice3)[2]`|[`r a2`, `r b2`]
+
+
+# c) Comparaisom des valeurs
+
+
+u               |Est. perte limitée  |Val théo.perte limitée|       
+----------------|------------------- |----------------------|
+$u=F^{-1}(0,50)$|`r perte_limitee[1]`|`r 1-exp(-ui[1])`     |
+$u=F^{-1}(0,75)$|`r perte_limitee[2]`|`r 1-exp(-ui[2])`     |
+
+
+u               |Est.prime par perte      |Val théo.prime par perte |IC 95% 
+----------------|-------------------------|-------------------------|---------------------|
+$u=F^{-1}(0,50)$|`r rowMeans(matrice3)[1]`| `r exp(-ui[1])`         |[`r a1`, `r b1`]     |
+$u=F^{-1}(0,75)$|`r rowMeans(matrice3)[2]`| `r exp(-ui[2])`         |[`r a2`, `r b2`]     |
+
+On remarque que le montant du déductible ordinaire est positivement correlé à la perte limitée, mais il est négativement correlé à la prime par perte. En effet, lorsque le déductible a augmenté en passant de $F^{-1}(0,50)$ à $F^{-1}(0,75)$, la perte limitée a également augmenté, alors que la prime par perte a chuté. Ce résultat est cohérent avec celui obtenu à la question a. 
+
+
+# Question 3
+
+# a) Estimateur de Kaplan-Meier pour les données: 30; 40; 57; 65; 65; 84*; 90; 92; 98; 101
+
+Soient $s_i$ le nombre de d'occurence de la $i^e$ observation (ou encore le nombre de décès  $(---,y_i]$), $b_i$ le nombre d'observations censurées entre $[y_i,y_{i+1}]$, et $r_t$ le nombre d'observations à risque.
+On a $s(y_1)=s(30)=1$ car il y a 1 décès entre $(0,30]$. $b(30)=0$ car il n'y a pas de données censurées entre $[30,40)$. Enfin, $r(y_1)=r(30)=10$ car $r(i)$ est définie comme suit:
+$$
+r(i) = \left\{
+    \begin{array}{ll}
+        n & \mbox{si }  i =1 \\
+        r_{i-1 }-s_{i-1}-b_{i-1} & \mbox{sinon.}
+    \end{array}
+\right.
+$$
+où $n$ est le nombre d'observations. Et on a:
+
+$$
+\widehat{S(y_i)}=\prod_{j<=i} (1-\frac{s_j}{r_j})
+$$
+
+Pour résumer, on obtient le tableau suivant:
+
+```{r, echo=FALSE, eval=TRUE}
+
+i<-c(1,2,3,4,5,6,7,8) ##Vecteur des indices
+y<-c(30,40,57,65,90,92,98,101) ##Vecteur bornes des intervalles
+b<-c(0,0,0,1,0,0,0,0) ##Vecteur des nombres d'observations censurées
+s<-c(1,1,1,2,1,1,1,1) ##Vecteur des nombres de décès
+r<-c(10,9,8,7,4,3,2,1) ##Vecteur des observations à risque
+S<-c(0.9,0.8, 0.7, 0.5, 0.375, 0.25, 0.2, 0) ##Vecteur estimateurs de Kaplan-Meier
+
+```
+
+$i$|$y_i$   |$s(y_i)$ |$b(y_i)$|$r(y_i)$|$\widehat{S(y_i)}$| 
+---|--------|---------|--------|--------|------------------|
+1  |`r y[1]`| `r s[1]`|`r b[1]`|`r r[1]`|`r S[1]`          |
+2  |`r y[2]`| `r s[2]`|`r b[2]`|`r r[2]`|`r S[2]`          |
+3  |`r y[3]`| `r s[3]`|`r b[3]`|`r r[3]`|`r S[3]`          |
+4  |`r y[4]`| `r s[4]`|`r b[4]`|`r r[4]`|`r S[4]`          |
+5  |`r y[5]`| `r s[5]`|`r b[5]`|`r r[5]`|`r S[5]`          |
+6  |`r y[6]`| `r s[6]`|`r b[6]`|`r r[6]`|`r S[6]`          |
+7  |`r y[7]`| `r s[7]`|`r b[7]`|`r r[7]`|`r S[7]`          |
+8  |`r y[8]`| `r s[8]`|`r b[8]`|`r r[8]`|`r S[8]`          |
+
+
+L'estimateur de Kaplan-Meier $\widehat{S}(91)=`r S[5]`$ 
+
+```{r, echo=FALSE, eval=TRUE}
+plot(y,S, type="s")
+```
+# Deuxième méthode pour la question a
+
+```{r echo=FALSE ,eval = TRUE}
+
+##A
+
+##Preparation des données
+tpdata <- data.frame(time = c(30,40,57,65,65,84,90,92,98,101),
+                     status = c(2,2,2,2,2,1,2,2,2,2))
+##Obtention de l'estimateur de Kaplan-Meier
+my.fit <- survfit(Surv(time, status) ~ 1, data = tpdata)
+myfit1 <- summary(my.fit)
+
+##Creation du graphique de l'estimateur de Kaplain-Meier
+ggsurvplot(fit = survfit(Surv(time, status) ~ 1, data = tpdata),
+    xlim = c(1,101),
+    xlab = "Jours", 
+    ylab = "Probabilité de survie")
+```
+
+```{r echo= FALSE, eval =TRUE}
+##B 
+
+KM_Estimator_91 <- prod(1- myfit1$n.event[1:5]/myfit1$n.risk[1:5])
+
+```
+
+L'estimateur de Kaplan-Meier 91 est égale à `r KM_Estimator_91`.
+
+# b) Utilisons la formule de Greenwood pour calculer un intervalle de confiance au niveau 0.95 pour $S(91)$
+
+La variance de l'estimateur de Kaplan-Meier, selon la formule de Greenwood est :
+$$\widehat{V}(\widehat{S}(y))=(\widehat{S}(y))^2*\sum_{i|y_i<=y}\frac{\widehat{q_i}}{\widehat{p_i}*r_i}$$ 
+où $\widehat{p_i}=1-\widehat{q_i}$ et $\widehat{q_i}=\frac{s_i}{r_i}$. On peut alors réécrire la variance comme suit:
+
+$$\widehat{V}(\widehat{S}(y))=(\widehat{S}(y))^2*\sum_{i|y_i<=y}\frac{s_i}{r_i*(r_i-s_i)}$$ 
+Ainsi, $$\widehat{V}(\widehat{S}(91))=0,375^2*(\frac{1}{10*(10-1)}+\frac{1}{9*(9-1)}+\frac{1}{8*(8-1)}+\frac{2}{7*(7-2)}+\frac{1}{4*(4-1)})$$
+
+
+
+
+
+```{r echo = FALSE, eval = TRUE}
+## Variance avec l'approximation de Greenwood
+Var_KM_91 <- (KM_Estimator_91)^2*sum(myfit1$n.event[1:5]/(myfit1$n.risk[1:5]*(myfit1$n.risk[1:5]-myfit1$n.event[1:5])))
+
+##Borne inférieure de l'intervalle au niveau de confiance de 95%
+##par la méthode linéaire
+Lower_S91 <- KM_Estimator_91 - qnorm(0.975)*sqrt(Var_KM_91)
+
+##Borne supérieure de l'intervalle au niveau de confiance de 95%
+##par la méthode linéaire
+Upper_S91 <- KM_Estimator_91 + qnorm(0.975)*sqrt(Var_KM_91)
+
+```
+
+
+
+$$\widehat{V}(\widehat{S}(91))=`r Var_KM_91`$$
+
+
+Un intervalle de confiance de niveau 95% pour $S(91)$ est: 
+$$\widehat{S}(91)\pm Z_{1-\frac{\alpha}{2}}*\sqrt{\widehat{V}(\widehat{S}(91))}$$
+où $Z_{1-\frac{\alpha}{2}}$ est le quantile d'ordre $1-\frac{\alpha}{2}$ de la loi normale centrée réduite.
+
+
+Ce qui donne 
+
+$$[`r cbind(Lower_S91,Upper_S91)`]$$
+
+
+# c) Calcul d'un intervalle de confiance de niveau 0,95 par la méthode log(-log) pour l'estimateur de Kaplan-Meier
+
+Cet intervalle est de la forme: 
+
+$$S(91)\in[\widehat{S}(91)^{\frac{1}{U}},\widehat{S}(91)^{U}]$$ 
+
+où
+
+$$exp[\frac{Z_{1-\frac{\alpha}{2}}*\sqrt{\widehat{V}(\widehat{S}(91))}}{\widehat{S}(91)*ln(\widehat{S}(91))}]$$
+
+```{r echo = FALSE, eval = TRUE}
+## Borne supérieure de l'intervalle au niveau de confiance de 95%
+## par la méthode log log 
+U <- exp((sqrt(Var_KM_91)*1.96) /(KM_Estimator_91*log(KM_Estimator_91)))
+
+Lower_Log_S91 <- KM_Estimator_91^(1/U)
+
+## Borne inférieure de l'intervalle au niveau de confiance de 95%
+## par la méthode log log
+Upper_Log_S91 <- KM_Estimator_91^U
+
+```
+
+Nous avons l'intervalle de confiance :
+$$[`r cbind(Lower_Log_S91,Upper_Log_S91)`]$$
+
+On constate que l'intervalle de confiance log log est plus précis que l'intervalle de confiance linéaire au niveau de confiance 95%.
+
+
+
+

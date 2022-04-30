@@ -1,0 +1,417 @@
+---
+title: "TP1_IARD2"
+author: "Ruffin Adja,Teffery Makondé"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output: pdf_document
+---
+
+
+# Question 1
+
+# a) Calcul de $\widehat \lambda$, l'estimateur du maximum de vraisemblance du paramètre d'une loi exponentielle  
+
+
+La densité d'une variable aléatoire $X$ d'une loi expontentielle de paramètre $\lambda$ est:  
+$$ f_{X}(x, \lambda) =\lambda e^{-\lambda x} \  , \ \lambda > 0$$  
+
+En appliquant le logarithme de part et d'autre de l'égalité, on a:
+$$ln(f_{X}(x, \lambda))=ln(\lambda)- \lambda x$$  
+La dérivée par rapport à  $\lambda$ nous donne:
+$$\frac{\partial ln((f_{X}(x, \lambda))}{\partial \lambda}=\frac{1}{\lambda}-x$$  
+$$\frac{\sum_{i=1}^{n}\partial ln((f_{X}(x, \lambda))}{\partial \lambda}=\frac{n}{\lambda}-\sum_{i=1}^{n}x_i$$  
+$$\frac{\sum_{i=1}^{n}\partial ln((f_{X}(x_i, \lambda))}{\partial \lambda}=0$$  
+$$\implies \frac{n}{\lambda}-\sum_{i=1}^{n}x_i=0$$  
+$$\implies \widehat \lambda=\frac{n}{\sum_{i=1}^{n}x_i}$$  
+
+
+```{r echo=FALSE, eval=TRUE}
+
+data<- c(132,149,476,147,135,110,176,107,147,165,135,117,110,111,226,108,102,108,227,102)
+
+n<-length(data)
+lambda=20/sum(data)
+
+```
+
+$$\widehat \lambda=`r lambda`$$ 
+
+\newpage
+
+# b) Calcul de la valeur théorique et de la valeur empirique de la prime stop-loss pour les valeurs suivantes du déductible : 10, 15, 20, 25, 30  
+
+On sait que:
+
+$$E(max(X-d,0))=E(X)-E(min(X,d))$$  
+$$E(max(X-d,0))=\frac{1}{\lambda}-\int_0^d\lambda x e^{-\lambda x}dx-\int_d^\infty d \lambda e^{-\lambda x}dx$$  
+$$E(max(X-d,0))=\frac{1}{\lambda}-\int_0^d\lambda x e^{-\lambda x}dx-\int_d^\infty d \lambda e^{-\lambda x}dx$$  
+$$E(max(X-d,0))=\frac{1}{\lambda}-(-de^{-\lambda d}-\frac{1}{\lambda}e^{-\lambda d}+\frac{1}{\lambda})-(de^{-\lambda d})$$  
+
+$$E(max(X-d,0))=\frac{1}{\lambda}e^{-\lambda d}$$  
+
+En ce qui concerne la valeur empirique, $E_{emp}(max(X-d,0))$  
+
+$$E_{emp}(max(X-d,0))=\frac{\sum_{i=1}^{n}X_i}{n}-\frac{\sum_{i=1}^{n}min(x_i,d)}{n}$$  
+
+
+```{r echo=FALSE, eval=TRUE}
+
+##Calcul des primes théorique et empirique
+
+prime_stop_loss_th<-numeric(5)
+prime_stop_loss_em<-numeric(5)
+
+
+deductible<- c(10,15,20,25,30)
+for (i in 1:5)
+{
+ prime_stop_loss_th[i]<-(1/lambda)*exp(-lambda*deductible[i])
+ prime_stop_loss_em[i] <- sum(data)/n - sum(pmin(data,deductible[i]))/n
+ 
+ 
+}
+
+```
+
+Les résultats sont présentés dans le tableau ci-dessous:  
+
+déductible            |Prime théorique          | Prime Estimée            | 
+----------------------|---------------------    | -------------------------| 
+`r deductible[1]`     |`r prime_stop_loss_th[1]`| `r prime_stop_loss_em[1]`| 
+`r deductible[2]`     |`r prime_stop_loss_th[2]`| `r prime_stop_loss_em[2]`| 
+`r deductible[3]`     |`r prime_stop_loss_th[3]`| `r prime_stop_loss_em[3]`|
+`r deductible[4]`     |`r prime_stop_loss_th[4]`| `r prime_stop_loss_em[4]`|
+`r deductible[5]`     |`r prime_stop_loss_th[5]`| `r prime_stop_loss_em[5]`|
+  
+Selon les résultats obtenus, on peut voir qu'il n'y a pas un gros écart entre la prime théorique et la prime estimée.
+De plus, on voit que plus grand est le déductible et moins la prime est élevée, donc il y a une plus grande prise en charge en cas de sinistre de la part de l'assuré.    
+ 
+# c) Calcul de la valeur théorique et de la valeur empirique de la perte limitée pour les valeurs suivantes de la limite supérieure : 200, 210, 220, 230, 240
+
+  
+si $PL$ est la perte limitée, alors  
+
+$$PL=E(min(X,u))$$  
+On a déja montré que la perte limitée théorique est :  
+
+$$E_{th}(min(X,u))=\int_0^u\lambda x e^{-\lambda x}dx+\int_u^\infty d \lambda e^{-\lambda x}dx$$  
+soit,  
+
+$$E_{th}(min(X,u))=(-ue^{-\lambda u}-\frac{1}{\lambda}e^{-\lambda u}+\frac{1}{\lambda})+(ue^{-\lambda u})$$  
+d'où
+
+$$E_{th}(min(X,u))=\frac{1}{\widehat\lambda}-\frac{1}{\widehat\lambda}e^{-\widehat\lambda u}$$  
+La perte limitée calculée de façon empirique peut, quant à elle, s'écrire comme suit:
+
+$$E_{em}(min(X,u))=\frac{\sum_{i=1}^{n}min(x_i,u)}{n}$$    
+
+
+```{r echo=FALSE, eval=TRUE}
+
+##Calcul des pertes limitées théorique et empirique
+
+perte_lim_th<-numeric(5)
+perte_lim_em<-numeric(5)
+
+
+limitesup<- c(200,210,220,230,240)
+for (i in 1:5)
+{
+ perte_lim_th[i]<-(1/lambda)*(1-exp(-lambda*limitesup[i]))
+ perte_lim_em[i] <- sum(pmin(data,limitesup[i]))/n
+ 
+
+}
+
+
+```
+
+Les valeurs des pertes limitées sont présentées dans le tableau ci-dessous.  
+
+Limite supérieure     |Perte limitée théorique  | Perte limitée empirique  | 
+----------------------|---------------------    | -------------------------| 
+`r limitesup[1]`      |`r perte_lim_th[1]`      | `r perte_lim_em[1]`      | 
+`r limitesup[2]`      |`r perte_lim_th[2]`      | `r perte_lim_em[2]`      | 
+`r limitesup[3]`      |`r perte_lim_th[3]`      | `r perte_lim_em[3]`      | 
+`r limitesup[4]`      |`r perte_lim_th[4]`      | `r perte_lim_em[4]`      | 
+`r limitesup[5]`      |`r perte_lim_th[5]`      | `r perte_lim_em[5]`      | 
+
+On voit que les pertes limitées estimées sont nettement supérieures aux pertes théoriques.
+
+
+# d) Calcul de la prime stop-loss à partir de la simulation des observations d'une loi exponentielle de paramètre $\widehat\lambda$  
+
+```{r echo=FALSE, eval=TRUE}
+simul<-rexp(n=100000, rate=lambda)
+taille<-length(simul)
+
+simul2<-rexp(n=500000, rate=lambda)
+taille2<-length(simul2)
+
+simul3<-rexp(n=1000000, rate=lambda)
+taille3<-length(simul3)
+
+##Calcul des primes stop-loss empiriques
+
+psl<-numeric(5) #le nom du vecteur est volontairement 
+##réduit afin de faciliter 
+##la construction du tableau récapitulatif
+
+psl2<-numeric(5)
+psl3<-numeric(5)
+
+ded<- c(10,15,20,25,30)  ##vecteur des déductibles
+
+for (i in 1:5)
+{
+ psl[i]<-sum(simul)/taille - sum(pmin(simul,ded[i]))/taille
+ psl2[i]<-sum(simul2)/taille2 - sum(pmin(simul2,ded[i]))/taille2
+ psl3[i]<-sum(simul3)/taille3 - sum(pmin(simul3,ded[i]))/taille3
+ 
+ 
+}
+
+```
+Les valeurs des primes stop-loss par déductible sont présentées dans le tableau ci-dessous. Les primes dans la dernière colonne sont calculées à partir de la simulation d'un échantillon de 100.000 observations.  
+
+d         |Prime théorique en a)    | Prime Estimée en a)      | Prime Estimée en d)
+----------|---------------------    | -------------------------| -------------
+`r ded[1]`|`r prime_stop_loss_th[1]`| `r prime_stop_loss_em[1]`| `r psl[1]`
+`r ded[2]`|`r prime_stop_loss_th[2]`| `r prime_stop_loss_em[2]`| `r psl[2]`
+`r ded[3]`|`r prime_stop_loss_th[3]`| `r prime_stop_loss_em[3]`| `r psl[3]`
+`r ded[4]`|`r prime_stop_loss_th[4]`| `r prime_stop_loss_em[4]`| `r psl[4]`
+`r ded[5]`|`r prime_stop_loss_th[5]`| `r prime_stop_loss_em[5]`| `r psl[5]`
+
+\newpage
+
+Le tableau est construit à partir de la simulation d'un échantillon de 500.000 observations.  
+
+d         |Prime théorique en a)    | Prime Estimée en a)      | Prime Estimée en d)
+----------|---------------------    | -------------------------| -------------
+`r ded[1]`|`r prime_stop_loss_th[1]`| `r prime_stop_loss_em[1]`| `r psl2[1]`
+`r ded[2]`|`r prime_stop_loss_th[2]`| `r prime_stop_loss_em[2]`| `r psl2[2]`
+`r ded[3]`|`r prime_stop_loss_th[3]`| `r prime_stop_loss_em[3]`| `r psl2[3]`
+`r ded[4]`|`r prime_stop_loss_th[4]`| `r prime_stop_loss_em[4]`| `r psl2[4]`
+`r ded[5]`|`r prime_stop_loss_th[5]`| `r prime_stop_loss_em[5]`| `r psl2[5]`
+
+Le tableau est construit à partir de la simulation d'un échantillon de 1.000.000 observations.  
+
+d         |Prime théorique en a)    | Prime Estimée en a)      | Prime Estimée en d)
+----------|---------------------    | -------------------------| -------------
+`r ded[1]`|`r prime_stop_loss_th[1]`| `r prime_stop_loss_em[1]`| `r psl3[1]`
+`r ded[2]`|`r prime_stop_loss_th[2]`| `r prime_stop_loss_em[2]`| `r psl3[2]`
+`r ded[3]`|`r prime_stop_loss_th[3]`| `r prime_stop_loss_em[3]`| `r psl3[3]`
+`r ded[4]`|`r prime_stop_loss_th[4]`| `r prime_stop_loss_em[4]`| `r psl3[4]`
+`r ded[5]`|`r prime_stop_loss_th[5]`| `r prime_stop_loss_em[5]`| `r psl3[5]`
+
+
+On remarque la valeur de la prime stop-loss calculée de façon empirique se rapproche de sa valeur analytique lorsque le nombre de simulation augmente.Alors la précision d'une tarification est dépendante du nombre d'observations car elle permet un meilleur ajustement.
+
+\newpage
+
+# Question 2
+
+# a) Calcul de $\widehat \lambda$, l'estimateur du maximum de vraisemblance du paramètre d'une loi exponentielle dans le cas où les données sont groupées.  
+
+On recherche ici la valeur du paramètre $\widehat\lambda$ qui maximise la vraisemblance. Les données étant groupées, la vraisemblance est définie comme suit:  
+
+$$L(\widehat\lambda)=\prod_{i=1}^n[F(c_j)-F(c_{j-1})]^{n_i}$$  
+On peut la réécrire en appliquant le logarithme à chaque membre de l'égalité:
+$$l(\widehat\lambda)=\sum_{i=1}^nn_ilog([F(c_j)-F(c_{j-1})])$$  
+
+```{r, echo=FALSE, eval=TRUE}
+
+Fx<-function(x, rate) 1-exp(-x*rate)
+
+LogVrg<-function(param)
+{
+  x<-c(0,25,50,75,100,125,150,200,250,350,500,750,1000,1500,2500,5000,10000,25000,1e+25)
+
+  nobs<-c(5,37,28,31,23,9,22,17,15,17,13,12,3,5,5,3,3,2)
+
+  res<-numeric(length(nobs))
+
+  for(i in 1:18)
+  {
+    res[i]<-nobs[i]*log(Fx(x[i+1],param)-Fx(x[i],param))
+  }  
+  sum(res)
+}
+value<-optimize(LogVrg, interval=c(0,0.0015), maximum = TRUE)$objective
+lambda2<-optimize(LogVrg, interval=c(0,0.0015), maximum = TRUE)$maximum
+
+
+##Estimation de la prime stop-loss à partir de la valeur de lambda2
+
+primesl<-numeric(5)
+ded2<-numeric(5)
+
+ded2<-c(25,30,35,40,45)
+
+for (i in 1:5)
+{
+ primesl[i]<-(1/lambda2)*(exp(-lambda2*ded2[i]))
+
+}
+
+
+##Estimation de la perte limitée à partir de la valeur de lambda2
+
+pertel<-numeric(5)
+limitesup2<-numeric(5)
+
+limitesup2<-c(2000,2500,3000,3500,4000)
+
+for (i in 1:5)
+{
+ pertel[i]<-(1/lambda2)*(1-exp(-lambda2*limitesup2[i]))
+
+}
+
+```
+
+En appliquant une méthode numérique, on obtient:
+$$\widehat\lambda=`r lambda2`$$    
+
+# b) Estimation de la prime stop-loss pour les données groupées et pour les valeurs suivantes du déductible: 25, 30, 35, 40, 45.  
+
+Connaissant la valeur du paramètre, on peut maintenant estimer la prime stop-loss comme suit:  
+
+$$E(max(X-d,0))=\frac{1}{\widehat\lambda}e^{-\widehat\lambda d}$$    
+
+\newpage
+
+La prime stop-loss par déductible est présentée dans le tableau ci-dessous.
+
+d               |Prime stop-loss     | 
+----------------|---------------------
+`r ded[1]`      |`r primesl[1]`      | 
+`r ded[2]`      |`r primesl[2]`      | 
+`r ded[3]`      |`r primesl[3]`      |
+`r ded[4]`      |`r primesl[4]`      | 
+`r ded[5]`      |`r primesl[5]`      | 
+
+
+On peut faire la même observation que pour la question 1, c'est que la prime diminue si le déductible augmente car il y a une plus grande prise en charge du risque par l'assuré.
+Alors pour l'assureur, le déductible permet de lutter contre l'antisélection.
+
+# c) Estimation de la perte limitée pour les données sont groupées et pour les valeurs suivantes de la limite supérieure: 2000, 2500, 3000, 3500, 4000.  
+
+La perte limitée est obtenue par la formule ci-après:  
+
+$$E_{th}(min(X,u))=\frac{1}{\widehat\lambda}-\frac{1}{\widehat\lambda}e^{-\widehat\lambda u}$$  
+
+La perte limitée par limite supérieure est présentée dans le tableau ci-dessous.  
+
+Limite supérieure      |Perte limitée théorique | 
+-----------------------|------------------------| 
+`r limitesup2[1]`      |`r pertel[1]`           | 
+`r limitesup2[2]`      |`r pertel[2]`           |  
+`r limitesup2[3]`      |`r pertel[3]`           | 
+`r limitesup2[4]`      |`r pertel[4]`           | 
+`r limitesup2[5]`      |`r pertel[5]`           | 
+
+On voit que malgré des limites assez élevées, les pertes n'atteignent pas la moitié des limites fixées par les contrats.
+
+\newpage
+
+
+# Question 3
+
+## a) Distribution beta(a=2;b=5)
+
+Le paramètre à estimer suit une loi beta(a=2; b=5) dont la courbe de densité est présentée ci-dessous.
+
+```{r, echo=FALSE, eval=TRUE}
+curve(dbeta(x,shape1=2,shape2=5), main="Densité de la loi beta(2,5)",xlab="theta")
+
+```
+
+Le mode est la valeur M pour laquelle la densité est maximale. 
+On le calcule comme suit:
+
+Le mode est $M_1=\frac{a-1}{a+b-2}=\frac{2-1}{2+5-2}=\frac{1}{5}$.  
+
+La moyenne est $E_1(X)=\frac{a}{a+b}=\frac{2}{7}$.
+
+La moyenne et le mode sont relativement proches, bien que la moyenne soit légèrèment plus élevée que le mode.
+
+
+## b) La distribution a posteriori 
+
+$$\pi_{(\Theta|X)}(\theta|x)=\frac{f_{X(x,\theta)}\pi(\theta)}{\int_0^1f_{X(x,\theta)}\pi
+(\theta)d\theta}$$
+
+
+où
+
+$$f_{X(x,\theta)}=\frac{(x+r-1)!}{(r-1)!*(x-r)!}*\theta^r*(1-\theta)^x$$
+$$f_{X(x,\theta)}=\frac{(5+2-1)!}{(2-1)!*(5-2)!}*\theta^2*(1-\theta)^5$$
+$$f_{X(x,\theta)}=120*\theta^2*(1-\theta)^5$$
+
+et 
+
+$$\pi(\theta)=\frac{\Gamma(a+b)}{\Gamma(a)*\Gamma(b)}*\theta^{a-1}*(1-\theta)^{b-1}$$
+ $$\pi(\theta)=\frac{\Gamma(7)}{\Gamma(2)*\Gamma(5)}*\theta^{2-1}*(1-\theta)^{5-1}$$
+$$\pi(\theta)=30*\theta*(1-\theta)^{4}$$
+
+Ainsi, 
+
+$$\pi_{(\Theta|X)}(\theta|x)=k*120*\theta^2*(1-\theta)^5*30*\theta*(1-\theta)^{4}$$
+devient
+
+$$\pi_{(\Theta|X)}(\theta|x)=3600k*\theta^3*(1-\theta)^9$$
+Si $k=\frac{143}{180}$, alors
+
+$$\pi_{(\Theta|X)}(\theta|x)=2860*\theta^3*(1-\theta)^9$$
+ou encore
+
+$$\pi_{(\Theta|X)}(\theta|x)=\frac{\Gamma(14)}{\Gamma(4)*\Gamma(10)}*\theta^{3}*(1-\theta)^{9}$$
+Ce qui est la densité d'une loi beta(a=4,b=10) représentée ci-dessous:
+
+```{r, echo=FALSE, eval=TRUE}
+curve(dbeta(x,shape1=4,shape2=10), main="Densité de la loi beta(4,10)", xlab="theta")
+
+```
+Le mode de la distribution a posteriori est $M_2=\frac{1}{4}$ et sa moyenne est $E_2(X)=\frac{2}{7}$.
+
+Le mode de la loi a posteriori est supérieur à celui de la loi a priori ($M_2>M_1$).
+
+La moyenne de la distribution a posteriori est identique à celle de la distribution a priori.
+
+L'estimateur de Bayes de $\theta$, est $\widehat\theta=\frac{2}{7}$. C'est la moyenne de la distribution a posteriori.
+
+
+## c) Calcul de l'estimateur de Bayes par simulation  
+```{r, echo=FALSE, eval=TRUE}
+
+sim1<-rbeta(10000,4,10)
+sim2<-rbeta(50000,4,10)
+sim3<-rbeta(500000,4,10)
+sim4<-rbeta(1000000,4,10)
+
+```
+
+
+Selon la taille de l'échantillon simulé, $m$,  la valeur de l'estimateur de Bayes présentée dans le tableau ci-après.
+
+$m$                    |Estimateur de Bayes      | 
+-----------------------|-------------------------| 
+$10.000$               |`r mean(sim1)`           | 
+$500.00$               |`r mean(sim2)`           |  
+$500.000$              |`r mean(sim3)`           | 
+$1000.000$             |`r mean(sim4)`           | 
+
+On peut noter que l'estimation s'affine avec l'augmentation de la taille de l'échantillon. En effet, lorsque la taille de l'échantillon augmente, la valeur de l'estimateur se rapporche de $\frac{2}{7}$, sa valeur théorique.De plus, l'effet de la distribution a priori s'estompe à mesure que les observations sont prises en compte.
+
+
+\newpage
+
+# Annexes
+
+## Programme sous R
+
+
+```{r, ref.label=knitr::all_labels(),echo=TRUE,eval=FALSE}
+```
+
+
